@@ -13,7 +13,7 @@ STREAM_PORT = 5000
 def create_socket(addr: str=STREAM_ADDR, port: int=STREAM_PORT):
   s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
   s.bind((addr, port))
-  print(f"Socket bound: {STREAM_ADDR}:{STREAM_PORT}")
+  print(f">> Socket bound: {STREAM_ADDR}:{STREAM_PORT}")
   return s
 
 # Initialise GStreamer
@@ -26,14 +26,16 @@ thread.start()
 
 #cmd = "v4l2src ! decodebin ! videoconvert ! autovideosink"		# Barebones using webcam input  (ksvideosrc on Win)
 #cmd = "fakesrc silent=false num-buffers=3 ! fakesink silent=false"	# State information return by fake elements
-cmd = "videotestsrc ! videoconvert ! autovideosink"			# Test video source with colour bars
+#cmd = "videotestsrc ! videoconvert ! autovideosink"			# Test video source with colour bars
 
-#cmd_mpeg_rtsp = f"videotestsrc ! ffenc_mpeg4 ! rtpmp4vpay config-interval=3 ! udpsink host={} port={}"
-
-pipeline = Gst.parse_launch(cmd)
+# TODO: Construct the SDP before parsing / launching the pipeline
+# Reformat src into mpeg4, convert to RTP payload and send via UDP to given addrs
+cmd = f"videotestsrc ! avenc_mpeg4 ! rtpmp4vpay config-interval=3 ! udpsink host={STREAM_ADDR} port={STREAM_PORT}"
 
 # Set the pipeline state to playing and enter loop
+pipeline = Gst.parse_launch(cmd)
 pipeline.set_state(Gst.State.PLAYING)
+print(f">> Running pipeline: {cmd}")
 try:
   while True:
     sleep(.1)
